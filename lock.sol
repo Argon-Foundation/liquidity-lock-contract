@@ -1,4 +1,4 @@
-pragma solidity ^0.4.17;
+pragma solidity ^0.4.24;
 
 interface IERC20 {
     function totalSupply() external view returns (uint256);
@@ -48,7 +48,7 @@ contract ReentrancyGuard {
 
     uint256 private _status;
 
-    constructor () public {
+    constructor() public {
         _status = _NOT_ENTERED;
     }
 
@@ -75,30 +75,30 @@ contract ReentrancyGuard {
 }
 
 library SafeMath {
-    function safeAdd(uint256 a, uint256 b) public pure returns (uint256 c) {
+    function safeAdd(uint256 a, uint256 b) external pure returns (uint256 c) {
         c = a + b;
         require(c >= a);
     }
 
-    function safeSub(uint256 a, uint256 b) public pure returns (uint256 c) {
+    function safeSub(uint256 a, uint256 b) external pure returns (uint256 c) {
         require(b <= a);
         c = a - b;
     }
 
-    function safeMul(uint256 a, uint256 b) public pure returns (uint256 c) {
+    function safeMul(uint256 a, uint256 b) external pure returns (uint256 c) {
         c = a * b;
         require(a == 0 || c / a == b);
     }
 
-    function safeDiv(uint256 a, uint256 b) public pure returns (uint256 c) {
+    function safeDiv(uint256 a, uint256 b) external pure returns (uint256 c) {
         require(b > 0);
         c = a / b;
     }
 }
 
-contract lock is ReentrancyGuard {
+contract Lock is ReentrancyGuard {
     using SafeMath for uint256;
-    struct lockInfo {
+    struct LockInfo {
         uint256 startedDate;
         uint256 endDate;
         uint256 amount;
@@ -107,7 +107,7 @@ contract lock is ReentrancyGuard {
     }
 
     uint256 public poolCount = 0;
-    lockInfo public pool;
+    LockInfo public pool;
 
     modifier onlyManager() {
         require(msg.sender == pool.managerAddress);
@@ -118,7 +118,7 @@ contract lock is ReentrancyGuard {
         uint256 _endDate,
         uint256 _amount,
         address _tokenAddress
-    ) public nonReentrant{
+    ) external nonReentrant {
         require(now < _endDate, "endDate should be bigger than now");
         require(_amount != 0, "amount cannot 0");
         require(
@@ -134,12 +134,12 @@ contract lock is ReentrancyGuard {
             "Transaction failed"
         );
         require(poolCount == 0, "Pool count must be 0");
-        pool = lockInfo(now, _endDate, _amount, _tokenAddress, msg.sender);
+        pool = LockInfo(now, _endDate, _amount, _tokenAddress, msg.sender);
         poolCount = poolCount.safeAdd(1);
     }
 
     function getPoolData()
-        public
+        external
         view
         returns (
             uint256,
@@ -158,7 +158,7 @@ contract lock is ReentrancyGuard {
         );
     }
 
-    function getTokens() public onlyManager nonReentrant {
+    function getTokens() external onlyManager nonReentrant {
         require(now > pool.endDate);
         IERC20(pool.tokenAddress).transfer(msg.sender, pool.amount);
     }
